@@ -1,11 +1,20 @@
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { poems } from "@/lib/poems";
-import { ArrowLeft } from "lucide-react";
+import { usePoems } from "@/lib/use-poems";
+import { ArrowLeft, Trash2 } from "lucide-react";
 
 export default function PoemDetail() {
   const params = useParams();
-  const poem = poems.find(p => p.id === params.id);
+  const [, navigate] = useLocation();
+  const { allPoems, deletePoem, isUserPoem } = usePoems();
+  const poem = allPoems.find(p => p.id === params.id);
+  const canDelete = poem ? isUserPoem(poem.id) : false;
+
+  function handleDelete() {
+    if (!poem) return;
+    deletePoem(poem.id);
+    navigate("/");
+  }
 
   if (!poem) {
     return (
@@ -27,10 +36,21 @@ export default function PoemDetail() {
       className="min-h-[85vh] flex flex-col items-center justify-center py-20 px-6"
     >
       <div className="w-full max-w-2xl mx-auto">
-        <Link href="/" className="inline-flex items-center text-xs uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors mb-16">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Collection
-        </Link>
+        <div className="flex items-center justify-between mb-16">
+          <Link href="/" className="inline-flex items-center text-xs uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Collection
+          </Link>
+          {canDelete && (
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground/50 hover:text-primary/70 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Remove
+            </button>
+          )}
+        </div>
 
         <div className="space-y-4 mb-16 text-center">
           <span className="text-xs uppercase tracking-[0.2em] text-primary/70">{poem.mood}</span>

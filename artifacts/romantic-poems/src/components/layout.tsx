@@ -28,6 +28,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/#about" className="text-sm uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors">
               About
             </Link>
+            <Link href="/add-poem" className="text-sm uppercase tracking-widest text-primary/70 hover:text-primary transition-colors">
+              Write
+            </Link>
           </nav>
         </div>
       </header>

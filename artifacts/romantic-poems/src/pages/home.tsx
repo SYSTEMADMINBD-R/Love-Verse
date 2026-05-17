@@ -1,7 +1,8 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "wouter";
-import { poems } from "@/lib/poems";
+import { usePoems } from "@/lib/use-poems";
 import { useRef } from "react";
+import { PenLine } from "lucide-react";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -13,7 +14,8 @@ export default function Home() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
   const heroY = useTransform(scrollYProgress, [0, 0.2], [0, 100]);
 
-  const featuredPoem = poems[2]; // "The Burning"
+  const { allPoems } = usePoems();
+  const featuredPoem = allPoems[2];
 
   return (
     <div ref={containerRef} className="flex flex-col">
@@ -92,10 +94,19 @@ export default function Home() {
         <div className="text-center mb-20 space-y-4">
           <h2 className="text-4xl font-serif">The Collection</h2>
           <p className="text-muted-foreground font-light">Select a fragment to read more.</p>
+          <div className="pt-4">
+            <Link
+              href="/add-poem"
+              className="inline-flex items-center gap-2 border border-primary/30 text-primary px-6 py-3 uppercase tracking-widest text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-500"
+            >
+              <PenLine className="w-3.5 h-3.5" />
+              Add Your Own
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {poems.map((poem, i) => (
+          {allPoems.map((poem, i) => (
             <motion.div
               key={poem.id}
               initial={{ opacity: 0, y: 20 }}
