@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "uqGHuBe8pvetFpF-gTYbn"
+uri = "file://nocturne-source.zip"
+type = "unspecified"
+title = "Nocturne — Source Code"
