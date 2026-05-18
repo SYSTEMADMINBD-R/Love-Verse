@@ -57,19 +57,39 @@ export default function PoemDetail() {
           <h1 className="text-4xl md:text-6xl font-serif">{poem.title}</h1>
         </div>
 
-        <div className="space-y-6 font-serif text-xl md:text-2xl leading-loose text-foreground/90 mx-auto max-w-xl">
-          {poem.lines.map((line, i) => (
-            <motion.p 
-              key={i}
+        {(() => {
+          const isProse = poem.lines.some(l => l.length > 80);
+          return isProse ? (
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.15 + 0.5, duration: 0.8 }}
-              className={line === "" ? "h-6" : ""}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="font-serif text-lg md:text-xl leading-relaxed text-foreground/90 mx-auto max-w-xl space-y-6"
             >
-              {line}
-            </motion.p>
-          ))}
-        </div>
+              {poem.lines.map((line, i) =>
+                line.trim() === "" ? (
+                  <div key={i} className="h-2" />
+                ) : (
+                  <p key={i}>{line}</p>
+                )
+              )}
+            </motion.div>
+          ) : (
+            <div className="space-y-6 font-serif text-xl md:text-2xl leading-loose text-foreground/90 mx-auto max-w-xl">
+              {poem.lines.map((line, i) => (
+                <motion.p
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.15 + 0.5, duration: 0.8 }}
+                  className={line === "" ? "h-6" : ""}
+                >
+                  {line}
+                </motion.p>
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </motion.div>
   );

@@ -129,10 +129,8 @@ export default function Home() {
                     {poem.title}
                   </h3>
                   
-                  <div className="flex-1 text-muted-foreground font-serif text-lg italic space-y-2 mb-8 line-clamp-3 overflow-hidden opacity-70 group-hover:opacity-100 transition-opacity">
-                    {poem.lines.slice(0, 3).map((line, j) => (
-                      <p key={j}>{line}</p>
-                    ))}
+                  <div className="flex-1 text-muted-foreground font-serif text-base italic mb-8 opacity-70 group-hover:opacity-100 transition-opacity line-clamp-4 leading-relaxed">
+                    {poem.lines.filter(l => l.trim() !== "").slice(0, 3).join(" ")}
                   </div>
                 </div>
               </Link>

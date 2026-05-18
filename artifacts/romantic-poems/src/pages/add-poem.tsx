@@ -61,7 +61,7 @@ export default function AddPoem() {
           <textarea
             value={text}
             onChange={(e) => { setText(e.target.value); setError(""); }}
-            placeholder={"Start writing here...\n\nLet it come as it comes.\nNo need to be careful.\nThis is just for you."}
+            placeholder={"Start writing here...\n\nA poem, a thought, a paragraph — anything goes.\nLet it come as it comes.\nNo need to be careful.\nThis is just for you."}
             rows={16}
             autoFocus
             className="w-full bg-transparent border border-border/20 focus:border-primary/40 outline-none p-6 font-serif text-xl leading-loose placeholder:text-muted-foreground/20 resize-none transition-colors"
