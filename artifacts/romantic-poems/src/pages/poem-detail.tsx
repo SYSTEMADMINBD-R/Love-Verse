@@ -1,13 +1,13 @@
-import { useParams, Link, useLocation } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { usePoems } from "@/lib/use-poems";
 import { ArrowLeft, Trash2 } from "lucide-react";
 
 export default function PoemDetail() {
-  const params = useParams();
+  const [, params] = useRoute<{ id: string }>("/poem/:id");
   const [, navigate] = useLocation();
   const { allPoems, deletePoem, isUserPoem } = usePoems();
-  const poem = allPoems.find(p => p.id === params.id);
+  const poem = allPoems.find(p => p.id === params?.id);
   const canDelete = poem ? isUserPoem(poem.id) : false;
 
   function handleDelete() {
