@@ -31,11 +31,10 @@ export function usePoems() {
       "-" +
       Date.now();
     const newPoem: Poem = { ...poem, id };
-    setUserPoems((prev) => {
-      const updated = [newPoem, ...prev];
-      saveUserPoems(updated);
-      return updated;
-    });
+    const current = loadUserPoems();
+    const updated = [newPoem, ...current];
+    saveUserPoems(updated);
+    setUserPoems(updated);
     return id;
   }, []);
 
