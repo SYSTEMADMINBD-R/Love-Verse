@@ -22,7 +22,9 @@ export default function AddPoem() {
 
   const serif = lang === "bn" ? "font-bengali" : "font-serif";
 
-  function handleSubmit(e: React.FormEvent) {
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmedText = text.trim();
     if (!trimmedText) {
@@ -37,7 +39,8 @@ export default function AddPoem() {
     const bnLines = bnText.trim() ? bnText.trim().split("\n") : undefined;
     const resolvedBnTitle = bnTitle.trim() || undefined;
 
-    const id = addPoem({
+    setSaving(true);
+    const id = await addPoem({
       title: resolvedTitle,
       mood: resolvedMood,
       lines,
@@ -191,9 +194,10 @@ export default function AddPoem() {
           <div className="flex items-center gap-6 pt-2">
             <button
               type="submit"
-              className={`inline-flex items-center justify-center border border-primary/50 text-primary px-10 py-4 uppercase tracking-widest text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-500 ${serif}`}
+              disabled={saving}
+              className={`inline-flex items-center justify-center border border-primary/50 text-primary px-10 py-4 uppercase tracking-widest text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-500 disabled:opacity-50 ${serif}`}
             >
-              {t.addBtn}
+              {saving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : t.addBtn}
             </button>
             <Link
               href="/"
