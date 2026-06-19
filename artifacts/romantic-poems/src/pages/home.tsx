@@ -1,11 +1,13 @@
+import { useRef, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "wouter";
 import { usePoems } from "@/lib/use-poems";
-import { useRef } from "react";
 import { PenLine } from "lucide-react";
 import { useLang } from "@/contexts/language-context";
 import type { Poem } from "@/lib/poems";
 import { useTranslatedPoem } from "@/lib/use-translated-poem";
+
+const SCROLL_KEY = "nocturne-scroll-pos";
 
 function PoemCard({ poem, index }: { poem: Poem; index: number }) {
   const { lang, t } = useLang();
@@ -22,7 +24,7 @@ function PoemCard({ poem, index }: { poem: Poem; index: number }) {
       viewport={{ once: true, margin: "-10%" }}
       transition={{ delay: index * 0.1, duration: 0.8 }}
     >
-      <Link href={`/poem/${poem.id}`}>
+      <Link href={`/poem/${poem.id}`} onClick={() => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))}>
         <div className="group h-full p-8 border border-border/50 bg-card hover:border-primary/50 transition-colors duration-500 cursor-pointer flex flex-col">
           <div className="flex justify-between items-start mb-8">
             <span className={`text-[10px] uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors ${serif}`}>
@@ -121,6 +123,15 @@ export default function Home() {
   const featuredPoem = allPoems[2];
   const { lang, t } = useLang();
   const serif = lang === "bn" ? "font-bengali" : "font-serif";
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    if (saved) {
+      sessionStorage.removeItem(SCROLL_KEY);
+      const y = parseInt(saved, 10);
+      requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "instant" }));
+    }
+  }, []);
 
   return (
     <div ref={containerRef} className="flex flex-col">
