@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { usePoems } from "@/lib/use-poems";
 import { useLang } from "@/contexts/language-context";
 
@@ -13,8 +13,11 @@ export default function AddPoem() {
   const { lang, t } = useLang();
 
   const [title, setTitle] = useState("");
+  const [bnTitle, setBnTitle] = useState("");
   const [mood, setMood] = useState<string>("");
   const [text, setText] = useState("");
+  const [bnText, setBnText] = useState("");
+  const [showBn, setShowBn] = useState(false);
   const [error, setError] = useState("");
 
   const serif = lang === "bn" ? "font-bengali" : "font-serif";
@@ -31,7 +34,16 @@ export default function AddPoem() {
       title.trim() || lines.find((l) => l.trim() !== "")?.trim() || "Untitled";
     const resolvedMood = mood || "longing";
 
-    const id = addPoem({ title: resolvedTitle, mood: resolvedMood, lines });
+    const bnLines = bnText.trim() ? bnText.trim().split("\n") : undefined;
+    const resolvedBnTitle = bnTitle.trim() || undefined;
+
+    const id = addPoem({
+      title: resolvedTitle,
+      mood: resolvedMood,
+      lines,
+      bnTitle: resolvedBnTitle,
+      bnLines,
+    });
     navigate(`/poem/${id}`);
   }
 
@@ -59,16 +71,83 @@ export default function AddPoem() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-10">
-          <textarea
-            value={text}
-            onChange={(e) => { setText(e.target.value); setError(""); }}
-            placeholder={t.writePlaceholder}
-            rows={16}
-            autoFocus
-            className={`w-full bg-transparent border border-border/20 focus:border-primary/40 outline-none p-6 text-xl leading-loose placeholder:text-muted-foreground/20 resize-none transition-colors ${serif}`}
-          />
+          {/* Main text */}
+          <div className="space-y-2">
+            <label className={`text-xs uppercase tracking-widest text-muted-foreground block ${serif}`}>
+              {lang === "bn" ? "ইংরেজি / অন্য ভাষায়" : "Your writing"}
+            </label>
+            <textarea
+              value={text}
+              onChange={(e) => { setText(e.target.value); setError(""); }}
+              placeholder={t.writePlaceholder}
+              rows={10}
+              autoFocus
+              className={`w-full bg-transparent border border-border/20 focus:border-primary/40 outline-none p-6 text-xl leading-loose placeholder:text-muted-foreground/20 resize-none transition-colors ${serif}`}
+            />
+          </div>
 
-          <div className="space-y-6 pt-2">
+          {/* Bangla version toggle */}
+          <div className="border border-border/20 hover:border-border/40 transition-colors">
+            <button
+              type="button"
+              onClick={() => setShowBn(!showBn)}
+              className={`w-full flex items-center justify-between px-6 py-4 text-xs uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors ${serif}`}
+            >
+              <span>
+                {showBn
+                  ? (lang === "bn" ? "বাংলা সংস্করণ লুকান" : "Hide Bangla version")
+                  : (lang === "bn" ? "+ বাংলা সংস্করণ যোগ করুন" : "+ Add Bangla version (optional)")}
+              </span>
+              <motion.div animate={{ rotate: showBn ? 180 : 0 }} transition={{ duration: 0.3 }}>
+                <ChevronDown className="w-4 h-4" />
+              </motion.div>
+            </button>
+
+            <AnimatePresence>
+              {showBn && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-6 pb-6 space-y-6 border-t border-border/20">
+                    <p className="font-bengali text-sm text-muted-foreground/60 pt-4">
+                      বাংলায় অনুবাদ বা নতুনভাবে লিখুন। বাংলা মোডে এই সংস্করণটি দেখাবে।
+                    </p>
+                    <div className="space-y-2">
+                      <label className="font-bengali text-xs uppercase tracking-widest text-muted-foreground block">
+                        বাংলা শিরোনাম <span className="normal-case tracking-normal text-muted-foreground/40">(ঐচ্ছিক)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={bnTitle}
+                        onChange={(e) => setBnTitle(e.target.value)}
+                        placeholder="বাংলা শিরোনাম..."
+                        className="font-bengali w-full bg-transparent border-b border-border/30 focus:border-primary/50 outline-none py-2 text-lg placeholder:text-muted-foreground/25 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-bengali text-xs uppercase tracking-widest text-muted-foreground block">
+                        বাংলায় লেখা
+                      </label>
+                      <textarea
+                        value={bnText}
+                        onChange={(e) => setBnText(e.target.value)}
+                        placeholder={"এখানে বাংলায় লিখুন...\nপ্রতিটি লাইন আলাদা হবে।"}
+                        rows={10}
+                        className="font-bengali w-full bg-transparent border border-border/20 focus:border-primary/40 outline-none p-6 text-xl leading-loose placeholder:text-muted-foreground/20 resize-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Title & Mood */}
+          <div className="space-y-6">
             <div className="space-y-2">
               <label className={`text-xs uppercase tracking-widest text-muted-foreground block ${serif}`}>
                 {t.labelTitle} <span className={`normal-case tracking-normal text-muted-foreground/40 ${serif}`}>{t.labelTitleHint}</span>
