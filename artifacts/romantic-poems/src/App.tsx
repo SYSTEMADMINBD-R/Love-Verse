@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import PoemDetail from "@/pages/poem-detail";
 import AddPoem from "@/pages/add-poem";
 import { Layout } from "@/components/layout";
+import { LanguageProvider } from "@/contexts/language-context";
 
 const queryClient = new QueryClient();
 
@@ -27,10 +28,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
+        <LanguageProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </LanguageProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

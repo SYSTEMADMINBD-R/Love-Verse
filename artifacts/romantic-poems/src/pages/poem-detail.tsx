@@ -2,11 +2,13 @@ import { useRoute, Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { usePoems } from "@/lib/use-poems";
 import { ArrowLeft, Trash2 } from "lucide-react";
+import { useLang } from "@/contexts/language-context";
 
 export default function PoemDetail() {
   const [, params] = useRoute<{ id: string }>("/poem/:id");
   const [, navigate] = useLocation();
   const { allPoems, deletePoem, isUserPoem } = usePoems();
+  const { lang, t } = useLang();
   const poem = allPoems.find(p => p.id === params?.id);
   const canDelete = poem ? isUserPoem(poem.id) : false;
 
@@ -19,16 +21,22 @@ export default function PoemDetail() {
   if (!poem) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center space-y-6">
-        <p className="font-serif italic text-xl">Poem not found.</p>
+        <p className="font-serif italic text-xl">{t.notFound}</p>
         <Link href="/" className="text-primary hover:underline text-sm uppercase tracking-widest">
-          Return to Library
+          {t.returnLib}
         </Link>
       </div>
     );
   }
 
+  const title = lang === "bn" && poem.bnTitle ? poem.bnTitle : poem.title;
+  const lines = lang === "bn" && poem.bnLines ? poem.bnLines : poem.lines;
+  const moodKey = poem.mood as keyof typeof t.moodNames;
+  const mood = t.moodNames[moodKey] ?? poem.mood;
+  const serif = lang === "bn" ? "font-bengali" : "font-serif";
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, filter: "blur(10px)" }}
       animate={{ opacity: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, filter: "blur(10px)" }}
@@ -37,28 +45,28 @@ export default function PoemDetail() {
     >
       <div className="w-full max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-16">
-          <Link href="/" className="inline-flex items-center text-xs uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/" className={`inline-flex items-center text-xs uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors ${serif}`}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Collection
+            {t.back}
           </Link>
           {canDelete && (
             <button
               onClick={handleDelete}
-              className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground/50 hover:text-primary/70 transition-colors"
+              className={`inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground/50 hover:text-primary/70 transition-colors ${serif}`}
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Remove
+              {t.remove}
             </button>
           )}
         </div>
 
         <div className="space-y-4 mb-16 text-center">
-          <span className="text-xs uppercase tracking-[0.2em] text-primary/70">{poem.mood}</span>
-          <h1 className="text-4xl md:text-6xl font-serif">{poem.title}</h1>
+          <span className={`text-xs uppercase tracking-[0.2em] text-primary/70 ${serif}`}>{mood}</span>
+          <h1 className={`text-4xl md:text-6xl ${serif}`}>{title}</h1>
         </div>
 
-        <div className="font-serif text-xl md:text-2xl leading-loose text-foreground/90 mx-auto max-w-xl space-y-4">
-          {poem.lines.map((line, i) => (
+        <div className={`text-xl md:text-2xl leading-loose text-foreground/90 mx-auto max-w-xl space-y-4 ${serif}`}>
+          {lines.map((line, i) => (
             <motion.p
               key={i}
               initial={{ opacity: 0, y: 10 }}
