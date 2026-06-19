@@ -55,6 +55,30 @@ router.post("/poems", async (req, res) => {
   }
 });
 
+router.patch("/poems/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, bnTitle, lines, bnLines, mood } = req.body as {
+      title?: string;
+      bnTitle?: string;
+      lines?: string[];
+      bnLines?: string[];
+      mood?: string;
+    };
+    const updates: Record<string, unknown> = {};
+    if (title !== undefined) updates.title = title;
+    if (bnTitle !== undefined) updates.bnTitle = bnTitle || null;
+    if (lines !== undefined) updates.lines = JSON.stringify(lines);
+    if (bnLines !== undefined) updates.bnLines = bnLines ? JSON.stringify(bnLines) : null;
+    if (mood !== undefined) updates.mood = mood;
+    await db.update(userPoemsTable).set(updates).where(eq(userPoemsTable.id, id));
+    res.json({ id });
+  } catch (err) {
+    req.log.error(err, "Failed to update poem");
+    res.status(500).json({ error: "Failed to update poem" });
+  }
+});
+
 router.delete("/poems/:id", async (req, res) => {
   try {
     const { id } = req.params;

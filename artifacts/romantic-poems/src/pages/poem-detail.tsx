@@ -1,7 +1,7 @@
 import { useRoute, Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { usePoems } from "@/lib/use-poems";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Pencil } from "lucide-react";
 import { useLang } from "@/contexts/language-context";
 import { useTranslatedPoem } from "@/lib/use-translated-poem";
 
@@ -50,13 +50,22 @@ export default function PoemDetail() {
             {t.back}
           </Link>
           {canDelete && (
-            <button
-              onClick={handleDelete}
-              className={`inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground/50 hover:text-primary/70 transition-colors ${serif}`}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              {t.remove}
-            </button>
+            <div className="flex items-center gap-5">
+              <Link
+                href={`/edit-poem/${poem.id}`}
+                className={`inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground/50 hover:text-primary transition-colors ${serif}`}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                {lang === "bn" ? "সম্পাদনা" : "Edit"}
+              </Link>
+              <button
+                onClick={handleDelete}
+                className={`inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground/50 hover:text-primary/70 transition-colors ${serif}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {t.remove}
+              </button>
+            </div>
           )}
         </div>
 

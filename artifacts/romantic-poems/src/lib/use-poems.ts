@@ -105,6 +105,21 @@ export function usePoems() {
     return id;
   }, []);
 
+  const updatePoem = useCallback(async (id: string, updates: Partial<Omit<Poem, "id">>) => {
+    setUserPoems((prev) => {
+      const updated = prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
+      saveCache(updated);
+      return updated;
+    });
+    try {
+      await fetch(`/api/poems/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+    } catch {}
+  }, []);
+
   const deletePoem = useCallback(async (id: string) => {
     setUserPoems((prev) => {
       const updated = prev.filter((p) => p.id !== id);
@@ -121,5 +136,5 @@ export function usePoems() {
     [userPoems]
   );
 
-  return { allPoems, userPoems, addPoem, deletePoem, isUserPoem };
+  return { allPoems, userPoems, addPoem, updatePoem, deletePoem, isUserPoem };
 }
