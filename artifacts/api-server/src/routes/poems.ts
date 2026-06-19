@@ -6,6 +6,7 @@ const router: IRouter = Router();
 
 router.get("/poems", async (req, res) => {
   try {
+    res.setHeader("Cache-Control", "no-store");
     const rows = await db
       .select()
       .from(userPoemsTable)
