@@ -15,38 +15,21 @@ function saveCache(cache: Record<string, string>) {
   } catch {}
 }
 
-function isBadTranslation(text: string): boolean {
-  const upper = text.toUpperCase();
-  return upper.includes("MYMEMORY WARNING") || upper.includes("YOU USED ALL AVAILABLE");
-}
-
-clearBadTranslationsOnLoad();
-
-function clearBadTranslationsOnLoad() {
-  const cache = loadCache();
-  const cleaned: Record<string, string> = {};
-  for (const [k, v] of Object.entries(cache)) {
-    if (!isBadTranslation(v)) cleaned[k] = v;
-  }
-  saveCache(cleaned);
-}
-
 export async function translateToBangla(text: string): Promise<string> {
   if (!text.trim()) return text;
 
   const cache = loadCache();
-  if (cache[text] && !isBadTranslation(cache[text])) return cache[text];
+  if (cache[text]) return cache[text];
 
   try {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|bn`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const translated: string = data?.responseData?.translatedText ?? text;
-
-    if (isBadTranslation(translated)) {
-      return text;
-    }
-
+    const res = await fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) return text;
+    const data = await res.json() as { translated?: string };
+    const translated = data.translated ?? text;
     cache[text] = translated;
     saveCache(cache);
     return translated;
