@@ -136,5 +136,10 @@ export function usePoems() {
     [userPoems]
   );
 
-  return { allPoems, userPoems, addPoem, updatePoem, deletePoem, isUserPoem };
+  const refreshPoems = useCallback(async () => {
+    const fresh = await loadAndMigratePoems();
+    setUserPoems(fresh);
+  }, []);
+
+  return { allPoems, userPoems, addPoem, updatePoem, deletePoem, isUserPoem, refreshPoems };
 }

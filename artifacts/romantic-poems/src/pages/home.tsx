@@ -1,8 +1,8 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "wouter";
 import { usePoems } from "@/lib/use-poems";
-import { PenLine } from "lucide-react";
+import { PenLine, Languages, CheckCircle, AlertCircle } from "lucide-react";
 import { useLang } from "@/contexts/language-context";
 import type { Poem } from "@/lib/poems";
 import { useTranslatedPoem } from "@/lib/use-translated-poem";
@@ -119,10 +119,15 @@ export default function Home() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
   const heroY = useTransform(scrollYProgress, [0, 0.2], [0, 100]);
 
-  const { allPoems } = usePoems();
+  const { allPoems, userPoems, refreshPoems } = usePoems();
   const featuredPoem = allPoems[2];
   const { lang, t } = useLang();
   const serif = lang === "bn" ? "font-bengali" : "font-serif";
+
+  const [translating, setTranslating] = useState(false);
+  const [translateResult, setTranslateResult] = useState<{ translated: number; failed: number } | null>(null);
+
+  const untranslatedCount = userPoems.filter(p => !p.bnLines || p.bnLines.length === 0).length;
 
   useEffect(() => {
     const saved = sessionStorage.getItem(SCROLL_KEY);
@@ -132,6 +137,21 @@ export default function Home() {
       requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "instant" }));
     }
   }, []);
+
+  async function handleTranslateAll() {
+    setTranslating(true);
+    setTranslateResult(null);
+    try {
+      const res = await fetch("/api/poems/translate-missing", { method: "POST" });
+      const data = await res.json() as { translated: number; failed: number };
+      setTranslateResult(data);
+      if (data.translated > 0) await refreshPoems();
+    } catch {
+      setTranslateResult({ translated: 0, failed: untranslatedCount });
+    } finally {
+      setTranslating(false);
+    }
+  }
 
   return (
     <div ref={containerRef} className="flex flex-col">
@@ -173,7 +193,7 @@ export default function Home() {
         <div className="text-center mb-20 space-y-4">
           <h2 className={`text-4xl ${serif}`}>{t.collectionTitle}</h2>
           <p className={`text-muted-foreground font-light ${serif}`}>{t.collectionSub}</p>
-          <div className="pt-4">
+          <div className="pt-4 flex flex-wrap justify-center gap-3">
             <Link
               href="/add-poem"
               className={`inline-flex items-center gap-2 border border-primary/30 text-primary px-6 py-3 uppercase tracking-widest text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-500 ${serif}`}
@@ -181,7 +201,26 @@ export default function Home() {
               <PenLine className="w-3.5 h-3.5" />
               {t.addYourOwn}
             </Link>
+            {untranslatedCount > 0 && (
+              <button
+                onClick={handleTranslateAll}
+                disabled={translating}
+                className={`inline-flex items-center gap-2 border border-primary/30 text-primary px-6 py-3 uppercase tracking-widest text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed ${serif}`}
+              >
+                <Languages className="w-3.5 h-3.5" />
+                {translating ? (lang === "bn" ? "অনুবাদ হচ্ছে…" : "Translating…") : (lang === "bn" ? "সব অনুবাদ করুন" : "Translate All to বাংলা")}
+              </button>
+            )}
           </div>
+          {translateResult && (
+            <div className={`flex items-center justify-center gap-2 text-sm mt-2 ${serif}`}>
+              {translateResult.failed === 0 ? (
+                <><CheckCircle className="w-4 h-4 text-green-500" /><span className="text-muted-foreground">{translateResult.translated} poem{translateResult.translated !== 1 ? "s" : ""} translated successfully</span></>
+              ) : (
+                <><AlertCircle className="w-4 h-4 text-amber-500" /><span className="text-muted-foreground">Quota exhausted — try again tomorrow when it resets</span></>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

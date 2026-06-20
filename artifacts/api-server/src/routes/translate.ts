@@ -1,68 +1,69 @@
 import { Router, type IRouter } from "express";
 import { GoogleGenAI } from "@google/genai";
+import { db, userPoemsTable } from "@workspace/db";
+import { isNull, or, eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
-async function callGemini(prompt: string): Promise<string> {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash-lite",
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
-  return response.text?.trim() ?? "";
-}
-
-router.post("/translate", async (req, res) => {
-  const { text } = req.body as { text?: string };
-  if (!text || typeof text !== "string") {
-    res.status(400).json({ error: "text is required" });
-    return;
-  }
+export async function autoTranslate(
+  title: string,
+  lines: string[]
+): Promise<{ bnTitle: string; bnLines: string[] } | null> {
   try {
-    const translated = await callGemini(
-      `Translate the following English text to Bangla (Bengali). Return ONLY the translated text, nothing else — no explanations, no notes, no quotation marks.\n\n${text}`
-    );
-    res.json({ translated: translated || text });
-  } catch (err) {
-    req.log.error({ err }, "Translation failed");
-    res.status(500).json({ error: "Translation failed" });
-  }
-});
-
-router.post("/translate-batch", async (req, res) => {
-  const { texts } = req.body as { texts?: string[] };
-  if (!texts || !Array.isArray(texts) || texts.length === 0) {
-    res.status(400).json({ error: "texts array is required" });
-    return;
-  }
-
-  try {
+    const texts = [title, lines.join("\n")];
     const prompt = `Translate each of the following English texts to Bangla (Bengali).
-Return a JSON array of translated strings in the EXACT same order as the input.
-Each translated string must preserve internal newlines (\\n) from the original.
+Return a JSON array of 2 translated strings in the same order.
+Preserve internal newlines in the second string.
 Return ONLY the JSON array — no explanation, no markdown, no code block.
 
-Input JSON array:
-${JSON.stringify(texts)}`;
+Input: ${JSON.stringify(texts)}`;
 
-    const raw = await callGemini(prompt);
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
 
-    let translations: string[];
-    try {
-      const cleaned = raw.replace(/^```[a-z]*\n?/i, "").replace(/```$/,"").trim();
-      translations = JSON.parse(cleaned) as string[];
-      if (!Array.isArray(translations) || translations.length !== texts.length) {
-        throw new Error("Mismatched length");
+    const raw = response.text?.trim() ?? "";
+    const cleaned = raw.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
+    const parsed = JSON.parse(cleaned) as string[];
+    if (!Array.isArray(parsed) || parsed.length < 2) return null;
+    return { bnTitle: parsed[0], bnLines: parsed[1].split("\n") };
+  } catch {
+    return null;
+  }
+}
+
+// Bulk-translate all user poems missing Bangla content
+router.post("/poems/translate-missing", async (req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(userPoemsTable)
+      .where(or(isNull(userPoemsTable.bnTitle), isNull(userPoemsTable.bnLines)));
+
+    let translated = 0;
+    let failed = 0;
+
+    for (const row of rows) {
+      const lines = JSON.parse(row.lines) as string[];
+      const result = await autoTranslate(row.title, lines);
+      if (result) {
+        await db
+          .update(userPoemsTable)
+          .set({ bnTitle: result.bnTitle, bnLines: JSON.stringify(result.bnLines) })
+          .where(eq(userPoemsTable.id, row.id));
+        translated++;
+      } else {
+        failed++;
       }
-    } catch {
-      translations = texts;
     }
 
-    res.json({ translations });
+    res.json({ translated, failed, total: rows.length });
   } catch (err) {
-    req.log.error({ err }, "Batch translation failed");
-    res.status(500).json({ error: "Batch translation failed" });
+    req.log.error({ err }, "Bulk translation failed");
+    res.status(500).json({ error: "Bulk translation failed" });
   }
 });
 
