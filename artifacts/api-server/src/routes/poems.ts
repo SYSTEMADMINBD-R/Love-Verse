@@ -1,8 +1,40 @@
 import { Router, type IRouter } from "express";
 import { db, userPoemsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { GoogleGenAI } from "@google/genai";
 
 const router: IRouter = Router();
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+
+async function autoTranslate(title: string, lines: string[]): Promise<{ bnTitle: string; bnLines: string[] } | null> {
+  try {
+    const texts = [title, lines.join("\n")];
+    const prompt = `Translate each of the following English texts to Bangla (Bengali).
+Return a JSON array of 2 translated strings in the same order.
+Preserve internal newlines in the second string.
+Return ONLY the JSON array — no explanation, no markdown, no code block.
+
+Input: ${JSON.stringify(texts)}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+
+    const raw = response.text?.trim() ?? "";
+    const cleaned = raw.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
+    const parsed = JSON.parse(cleaned) as string[];
+
+    if (!Array.isArray(parsed) || parsed.length < 2) return null;
+    return {
+      bnTitle: parsed[0],
+      bnLines: parsed[1].split("\n"),
+    };
+  } catch {
+    return null;
+  }
+}
 
 router.get("/poems", async (req, res) => {
   try {
@@ -40,12 +72,25 @@ router.post("/poems", async (req, res) => {
       res.status(400).json({ error: "Missing required fields" });
       return;
     }
+
+    let finalBnTitle = bnTitle ?? null;
+    let finalBnLines = bnLines ?? null;
+
+    // Auto-translate if the user didn't provide Bangla content
+    if (!finalBnTitle || !finalBnLines) {
+      const translated = await autoTranslate(title, lines);
+      if (translated) {
+        finalBnTitle = finalBnTitle ?? translated.bnTitle;
+        finalBnLines = finalBnLines ?? translated.bnLines;
+      }
+    }
+
     await db.insert(userPoemsTable).values({
       id,
       title,
-      bnTitle: bnTitle ?? null,
+      bnTitle: finalBnTitle,
       lines: JSON.stringify(lines),
-      bnLines: bnLines ? JSON.stringify(bnLines) : null,
+      bnLines: finalBnLines ? JSON.stringify(finalBnLines) : null,
       mood,
     });
     res.status(201).json({ id });
@@ -65,12 +110,27 @@ router.patch("/poems/:id", async (req, res) => {
       bnLines?: string[];
       mood?: string;
     };
+
     const updates: Record<string, unknown> = {};
     if (title !== undefined) updates.title = title;
     if (bnTitle !== undefined) updates.bnTitle = bnTitle || null;
     if (lines !== undefined) updates.lines = JSON.stringify(lines);
     if (bnLines !== undefined) updates.bnLines = bnLines ? JSON.stringify(bnLines) : null;
     if (mood !== undefined) updates.mood = mood;
+
+    // Auto-translate if title or lines changed and no Bangla provided
+    if ((title !== undefined || lines !== undefined) && !bnTitle && !bnLines) {
+      const currentTitle = title ?? "";
+      const currentLines = lines ?? [];
+      if (currentTitle && currentLines.length > 0) {
+        const translated = await autoTranslate(currentTitle, currentLines);
+        if (translated) {
+          updates.bnTitle = translated.bnTitle;
+          updates.bnLines = JSON.stringify(translated.bnLines);
+        }
+      }
+    }
+
     await db.update(userPoemsTable).set(updates).where(eq(userPoemsTable.id, id));
     res.json({ id });
   } catch (err) {

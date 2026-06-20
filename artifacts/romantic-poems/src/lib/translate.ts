@@ -1,51 +1,18 @@
+// Translations are handled server-side at save time (stored in DB as bnTitle/bnLines).
+// This module is kept for any future use but no longer makes API calls on-demand.
+
 const CACHE_KEY = "nocturne-translations-v2";
 const OLD_CACHE_KEY = "nocturne-translations";
 
-// Wipe any stale MyMemory cache from the old key
+// Wipe old caches from previous approaches
 try { localStorage.removeItem(OLD_CACHE_KEY); } catch {}
+try { localStorage.removeItem(CACHE_KEY); } catch {}
 
-function loadCache(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveCache(cache: Record<string, string>) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-  } catch {}
-}
-
+// No-op: translations are pre-stored in the database now
 export async function translateToBangla(text: string): Promise<string> {
-  if (!text.trim()) return text;
-
-  const cache = loadCache();
-  if (cache[text]) return cache[text];
-
-  try {
-    const res = await fetch("/api/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    if (!res.ok) return text;
-    const data = await res.json() as { translated?: string };
-    const translated = data.translated ?? text;
-    if (translated && translated !== text) {
-      cache[text] = translated;
-      saveCache(cache);
-    }
-    return translated;
-  } catch {
-    return text;
-  }
+  return text;
 }
 
 export async function translateLines(lines: string[]): Promise<string[]> {
-  const full = lines.join("\n");
-  const translated = await translateToBangla(full);
-  return translated.split("\n");
+  return lines;
 }
