@@ -54,65 +54,65 @@
   --app-font-serif: 'Cormorant Garamond', serif;
   --radius: 0rem;
   
-  --background: 340 28% 9%;
-  --foreground: 40 30% 93%;
-  --border: 340 20% 22%;
-  --card: 340 28% 12%;
-  --card-foreground: 40 30% 93%;
-  --card-border: 340 20% 22%;
+  --background: 340 25% 14%;
+  --foreground: 40 30% 95%;
+  --border: 340 18% 28%;
+  --card: 340 25% 18%;
+  --card-foreground: 40 30% 95%;
+  --card-border: 340 18% 28%;
   
-  --popover: 340 28% 9%;
-  --popover-foreground: 40 30% 93%;
-  --popover-border: 340 20% 22%;
+  --popover: 340 25% 14%;
+  --popover-foreground: 40 30% 95%;
+  --popover-border: 340 18% 28%;
   
-  --primary: 348 62% 50%;
-  --primary-foreground: 40 30% 97%;
+  --primary: 348 65% 56%;
+  --primary-foreground: 40 30% 98%;
   
-  --secondary: 340 20% 16%;
-  --secondary-foreground: 40 30% 93%;
+  --secondary: 340 18% 21%;
+  --secondary-foreground: 40 30% 95%;
   
-  --muted: 340 20% 16%;
-  --muted-foreground: 40 20% 76%;
+  --muted: 340 18% 21%;
+  --muted-foreground: 40 20% 81%;
   
-  --accent: 348 62% 50%;
-  --accent-foreground: 40 30% 97%;
+  --accent: 348 65% 56%;
+  --accent-foreground: 40 30% 98%;
   
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 40 30% 95%;
   
-  --input: 340 20% 22%;
-  --ring: 348 62% 50%;
+  --input: 340 18% 28%;
+  --ring: 348 65% 56%;
 }
 
 .dark {
-  --background: 340 28% 9%;
-  --foreground: 40 30% 93%;
-  --border: 340 20% 22%;
-  --card: 340 28% 12%;
-  --card-foreground: 40 30% 93%;
-  --card-border: 340 20% 22%;
+  --background: 340 25% 14%;
+  --foreground: 40 30% 95%;
+  --border: 340 18% 28%;
+  --card: 340 25% 18%;
+  --card-foreground: 40 30% 95%;
+  --card-border: 340 18% 28%;
   
-  --popover: 340 28% 9%;
-  --popover-foreground: 40 30% 93%;
-  --popover-border: 340 20% 22%;
+  --popover: 340 25% 14%;
+  --popover-foreground: 40 30% 95%;
+  --popover-border: 340 18% 28%;
   
-  --primary: 348 62% 50%;
-  --primary-foreground: 40 30% 97%;
+  --primary: 348 65% 56%;
+  --primary-foreground: 40 30% 98%;
   
-  --secondary: 340 20% 16%;
-  --secondary-foreground: 40 30% 93%;
+  --secondary: 340 18% 21%;
+  --secondary-foreground: 40 30% 95%;
   
-  --muted: 340 20% 16%;
-  --muted-foreground: 40 20% 76%;
+  --muted: 340 18% 21%;
+  --muted-foreground: 40 20% 81%;
   
-  --accent: 348 62% 50%;
-  --accent-foreground: 40 30% 97%;
+  --accent: 348 65% 56%;
+  --accent-foreground: 40 30% 98%;
   
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 40 30% 95%;
   
-  --input: 340 20% 22%;
-  --ring: 348 62% 50%;
+  --input: 340 18% 28%;
+  --ring: 348 65% 56%;
 }
 
 @layer base {
