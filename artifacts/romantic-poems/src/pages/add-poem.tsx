@@ -40,14 +40,24 @@ export default function AddPoem() {
     const resolvedBnTitle = bnTitle.trim() || undefined;
 
     setSaving(true);
-    const id = await addPoem({
-      title: resolvedTitle,
-      mood: resolvedMood,
-      lines,
-      bnTitle: resolvedBnTitle,
-      bnLines,
-    });
-    navigate(`/poem/${id}`);
+    try {
+      const id = await addPoem({
+        title: resolvedTitle,
+        mood: resolvedMood,
+        lines,
+        bnTitle: resolvedBnTitle,
+        bnLines,
+      });
+      navigate(`/poem/${id}`);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : (lang === "bn" ? "কবিতা সংরক্ষণ করা যায়নি।" : "Could not save the poem."),
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -80,6 +90,7 @@ export default function AddPoem() {
               {lang === "bn" ? "ইংরেজি / অন্য ভাষায়" : "Your writing"}
             </label>
             <textarea
+              data-testid="input-poem-text"
               value={text}
               onChange={(e) => { setText(e.target.value); setError(""); }}
               placeholder={t.writePlaceholder}
@@ -188,12 +199,13 @@ export default function AddPoem() {
           </div>
 
           {error && (
-            <p className={`text-primary/80 text-sm font-light italic ${serif}`}>{error}</p>
+            <p data-testid="status-add-poem-error" role="alert" className={`text-primary/80 text-sm font-light italic ${serif}`}>{error}</p>
           )}
 
           <div className="flex items-center gap-6 pt-2">
             <button
               type="submit"
+              data-testid="button-add-poem"
               disabled={saving}
               className={`inline-flex items-center justify-center border border-primary/50 text-primary px-10 py-4 uppercase tracking-widest text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-500 disabled:opacity-50 ${serif}`}
             >

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, userPoemsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { requireAdmin } from "../lib/admin-auth";
 import { autoTranslate } from "./translate";
 
 const router: IRouter = Router();
@@ -27,7 +28,7 @@ router.get("/poems", async (req, res) => {
   }
 });
 
-router.post("/poems", async (req, res) => {
+router.post("/poems", requireAdmin, async (req, res) => {
   try {
     const { id, title, bnTitle, lines, bnLines, mood } = req.body as {
       id: string;
@@ -68,7 +69,7 @@ router.post("/poems", async (req, res) => {
   }
 });
 
-router.patch("/poems/:id", async (req, res) => {
+router.patch("/poems/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { title, bnTitle, lines, bnLines, mood } = req.body as {
@@ -106,7 +107,7 @@ router.patch("/poems/:id", async (req, res) => {
   }
 });
 
-router.delete("/poems/:id", async (req, res) => {
+router.delete("/poems/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     await db.delete(userPoemsTable).where(eq(userPoemsTable.id, id));

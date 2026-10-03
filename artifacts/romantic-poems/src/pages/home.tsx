@@ -6,6 +6,7 @@ import { PenLine, Languages, CheckCircle, AlertCircle } from "lucide-react";
 import { useLang } from "@/contexts/language-context";
 import type { Poem } from "@/lib/poems";
 import { useTranslatedPoem } from "@/lib/use-translated-poem";
+import { useAdminAuth } from "@/contexts/admin-auth-context";
 
 const SCROLL_KEY = "nocturne-scroll-pos";
 
@@ -120,6 +121,7 @@ export default function Home() {
   const heroY = useTransform(scrollYProgress, [0, 0.2], [0, 100]);
 
   const { allPoems, userPoems, refreshPoems } = usePoems();
+  const { authenticated } = useAdminAuth();
   const featuredPoem = allPoems[2];
   const { lang, t } = useLang();
   const serif = lang === "bn" ? "font-bengali" : "font-serif";
@@ -143,6 +145,9 @@ export default function Home() {
     setTranslateResult(null);
     try {
       const res = await fetch("/api/poems/translate-missing", { method: "POST" });
+      if (!res.ok) {
+        throw new Error("Translation request failed");
+      }
       const data = await res.json() as { translated: number; failed: number };
       setTranslateResult(data);
       if (data.translated > 0) await refreshPoems();
@@ -201,7 +206,7 @@ export default function Home() {
               <PenLine className="w-3.5 h-3.5" />
               {t.addYourOwn}
             </Link>
-            {untranslatedCount > 0 && (
+            {authenticated && untranslatedCount > 0 && (
               <button
                 onClick={handleTranslateAll}
                 disabled={translating}

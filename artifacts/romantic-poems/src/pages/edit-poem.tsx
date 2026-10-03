@@ -39,6 +39,7 @@ export default function EditPoem() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!poem) return;
     const trimmedText = text.trim();
     if (!trimmedText) {
       setError(lang === "bn" ? "আগে কিছু লিখুন।" : "Write something first.");
@@ -52,14 +53,24 @@ export default function EditPoem() {
     const resolvedBnTitle = bnTitle.trim() || undefined;
 
     setSaving(true);
-    await updatePoem(poem.id, {
-      title: resolvedTitle,
-      mood: resolvedMood,
-      lines,
-      bnTitle: resolvedBnTitle,
-      bnLines,
-    });
-    navigate(`/poem/${poem.id}`);
+    try {
+      await updatePoem(poem.id, {
+        title: resolvedTitle,
+        mood: resolvedMood,
+        lines,
+        bnTitle: resolvedBnTitle,
+        bnLines,
+      });
+      navigate(`/poem/${poem.id}`);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : (lang === "bn" ? "পরিবর্তন সংরক্ষণ করা যায়নি।" : "Could not save your changes."),
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -207,12 +218,13 @@ export default function EditPoem() {
           </div>
 
           {error && (
-            <p className={`text-primary/80 text-sm font-light italic ${serif}`}>{error}</p>
+            <p data-testid="status-edit-poem-error" role="alert" className={`text-primary/80 text-sm font-light italic ${serif}`}>{error}</p>
           )}
 
           <div className="flex items-center gap-6 pt-2">
             <button
               type="submit"
+              data-testid="button-save-poem-changes"
               disabled={saving}
               className={`inline-flex items-center justify-center border border-primary/50 text-primary px-10 py-4 uppercase tracking-widest text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-500 disabled:opacity-50 ${serif}`}
             >

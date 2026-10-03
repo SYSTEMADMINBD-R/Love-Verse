@@ -1,23 +1,38 @@
+import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { usePoems } from "@/lib/use-poems";
 import { ArrowLeft, Trash2, Pencil } from "lucide-react";
 import { useLang } from "@/contexts/language-context";
 import { useTranslatedPoem } from "@/lib/use-translated-poem";
+import { useAdminAuth } from "@/contexts/admin-auth-context";
 
 export default function PoemDetail() {
   const [, params] = useRoute<{ id: string }>("/poem/:id");
   const [, navigate] = useLocation();
   const { allPoems, deletePoem, isUserPoem } = usePoems();
   const { lang, t } = useLang();
+  const { authenticated } = useAdminAuth();
+  const [deleting, setDeleting] = useState(false);
+  const [actionError, setActionError] = useState("");
   const poem = allPoems.find(p => p.id === params?.id);
-  const canDelete = poem ? isUserPoem(poem.id) : false;
+  const canDelete = poem ? authenticated && isUserPoem(poem.id) : false;
   const { title, lines, loading } = useTranslatedPoem(poem, lang);
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!poem) return;
-    deletePoem(poem.id);
-    navigate("/");
+    setDeleting(true);
+    setActionError("");
+    try {
+      await deletePoem(poem.id);
+      navigate("/");
+    } catch (cause) {
+      setActionError(
+        cause instanceof Error ? cause.message : "Could not delete this poem.",
+      );
+    } finally {
+      setDeleting(false);
+    }
   }
 
   if (!poem) {
@@ -53,21 +68,30 @@ export default function PoemDetail() {
             <div className="flex items-center gap-5">
               <Link
                 href={`/edit-poem/${poem.id}`}
+                data-testid="link-edit-poem"
                 className={`inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground/50 hover:text-primary transition-colors ${serif}`}
               >
                 <Pencil className="w-3.5 h-3.5" />
                 {lang === "bn" ? "সম্পাদনা" : "Edit"}
               </Link>
               <button
-                onClick={handleDelete}
+                type="button"
+                data-testid="button-delete-poem"
+                disabled={deleting}
+                onClick={() => void handleDelete()}
                 className={`inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground/50 hover:text-primary/70 transition-colors ${serif}`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                {t.remove}
+                {deleting ? (lang === "bn" ? "মুছে ফেলা হচ্ছে…" : "Deleting…") : t.remove}
               </button>
             </div>
           )}
         </div>
+        {actionError && (
+          <p data-testid="status-poem-action-error" role="alert" className="mb-8 text-sm text-destructive">
+            {actionError}
+          </p>
+        )}
 
         <div className="space-y-4 mb-16 text-center">
           <span className={`text-xs uppercase tracking-[0.2em] text-primary/70 ${serif}`}>{mood}</span>

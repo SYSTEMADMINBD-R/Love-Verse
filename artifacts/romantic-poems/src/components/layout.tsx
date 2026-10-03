@@ -1,9 +1,11 @@
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLang } from "@/contexts/language-context";
+import { useAdminAuth } from "@/contexts/admin-auth-context";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { lang, setLang, t } = useLang();
+  const { authenticated } = useAdminAuth();
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-background">
@@ -28,8 +30,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/#about" className="text-sm uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
               {t.navAbout}
             </Link>
-            <Link href="/add-poem" className="text-sm uppercase tracking-widest text-primary/70 hover:text-primary transition-colors">
-              {t.navWrite}
+            <Link
+              href={authenticated ? "/admin" : "/add-poem"}
+              data-testid={authenticated ? "link-admin-dashboard" : "link-write-poem"}
+              className="text-sm uppercase tracking-widest text-primary/70 hover:text-primary transition-colors"
+            >
+              {authenticated ? "Admin" : t.navWrite}
             </Link>
             <button
               onClick={() => setLang(lang === "en" ? "bn" : "en")}

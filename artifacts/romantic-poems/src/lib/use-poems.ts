@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { poems as builtInPoems, type Poem } from "./poems";
+import { useAdminAuth } from "@/contexts/admin-auth-context";
 
 const STORAGE_KEY = "nocturne-user-poems";
 const MIGRATED_KEY = "nocturne-migrated-v1";
@@ -29,15 +30,29 @@ function saveCache(poems: Poem[]) {
   } catch {}
 }
 
+async function ensureResponseOk(response: Response): Promise<void> {
+  if (response.ok) return;
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: unknown }
+    | null;
+  throw new Error(
+    typeof payload?.error === "string"
+      ? payload.error
+      : `Request failed (${response.status})`,
+  );
+}
+
 async function postPoem(poem: Poem): Promise<void> {
-  await fetch("/api/poems", {
+  const response = await fetch("/api/poems", {
     method: "POST",
+    credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(poem),
   });
+  await ensureResponseOk(response);
 }
 
-async function loadAndMigratePoems(): Promise<Poem[]> {
+async function loadAndMigratePoems(allowLocalMigration: boolean): Promise<Poem[]> {
   let dbPoems: Poem[] = [];
   let fetchOk = false;
 
@@ -56,8 +71,10 @@ async function loadAndMigratePoems(): Promise<Poem[]> {
   }
 
   const alreadyMigrated = localStorage.getItem(MIGRATED_KEY) === "true";
-  if (!alreadyMigrated) {
+  let shouldUpdateCache = alreadyMigrated;
+  if (!alreadyMigrated && allowLocalMigration) {
     const local = loadCache();
+    let migrationSucceeded = true;
     if (local.length > 0) {
       const dbIds = new Set(dbPoems.map((p) => p.id));
       const toMigrate = local.filter((p) => !dbIds.has(p.id));
@@ -66,23 +83,27 @@ async function loadAndMigratePoems(): Promise<Poem[]> {
           await postPoem(poem);
           dbPoems = [poem, ...dbPoems];
         } catch {
-          // ignore individual failures
+          migrationSucceeded = false;
         }
       }
     }
-    localStorage.setItem(MIGRATED_KEY, "true");
+    if (migrationSucceeded) {
+      localStorage.setItem(MIGRATED_KEY, "true");
+      shouldUpdateCache = true;
+    }
   }
 
-  saveCache(dbPoems);
+  if (shouldUpdateCache) saveCache(dbPoems);
   return dbPoems;
 }
 
 export function usePoems() {
+  const { authenticated } = useAdminAuth();
   const [userPoems, setUserPoems] = useState<Poem[]>(loadCache);
 
   useEffect(() => {
-    loadAndMigratePoems().then(setUserPoems);
-  }, []);
+    loadAndMigratePoems(authenticated).then(setUserPoems);
+  }, [authenticated]);
 
   const allPoems = [...builtInPoems, ...userPoems];
 
@@ -90,45 +111,44 @@ export function usePoems() {
     const id = generateId(poem.title);
     const newPoem: Poem = { ...poem, id };
 
+    await postPoem(newPoem);
     setUserPoems((prev) => {
       const updated = [newPoem, ...prev];
       saveCache(updated);
       return updated;
     });
 
-    try {
-      await postPoem(newPoem);
-    } catch {
-      // still works from cache
-    }
-
     return id;
   }, []);
 
   const updatePoem = useCallback(async (id: string, updates: Partial<Omit<Poem, "id">>) => {
+    const response = await fetch(`/api/poems/${id}`, {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    await ensureResponseOk(response);
+
     setUserPoems((prev) => {
       const updated = prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
       saveCache(updated);
       return updated;
     });
-    try {
-      await fetch(`/api/poems/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-    } catch {}
   }, []);
 
   const deletePoem = useCallback(async (id: string) => {
+    const response = await fetch(`/api/poems/${id}`, {
+      method: "DELETE",
+      credentials: "same-origin",
+    });
+    await ensureResponseOk(response);
+
     setUserPoems((prev) => {
       const updated = prev.filter((p) => p.id !== id);
       saveCache(updated);
       return updated;
     });
-    try {
-      await fetch(`/api/poems/${id}`, { method: "DELETE" });
-    } catch {}
   }, []);
 
   const isUserPoem = useCallback(
@@ -137,9 +157,9 @@ export function usePoems() {
   );
 
   const refreshPoems = useCallback(async () => {
-    const fresh = await loadAndMigratePoems();
+    const fresh = await loadAndMigratePoems(authenticated);
     setUserPoems(fresh);
-  }, []);
+  }, [authenticated]);
 
   return { allPoems, userPoems, addPoem, updatePoem, deletePoem, isUserPoem, refreshPoems };
 }

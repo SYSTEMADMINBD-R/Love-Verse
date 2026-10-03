@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import Groq from "groq-sdk";
 import { db, userPoemsTable } from "@workspace/db";
 import { isNull, or, eq } from "drizzle-orm";
+import { requireAdmin } from "../lib/admin-auth";
 
 const router: IRouter = Router();
 
@@ -35,7 +36,7 @@ export async function autoTranslate(
 }
 
 // Bulk-translate all user poems missing Bangla — all in ONE Groq call
-router.post("/poems/translate-missing", async (req, res) => {
+router.post("/poems/translate-missing", requireAdmin, async (req, res) => {
   try {
     const rows = await db
       .select()
